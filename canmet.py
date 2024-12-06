@@ -119,12 +119,12 @@ with h5py.File('./CANTYPE_MODISonly_2013.h5', 'r') as file:
     # List all groups/datasets in the file
     CTS = file['CTS'][:]
 print(np.shape(CTS)) 
-Sinbeta, TairK0, Ws0, PPFD  = 0.00171437, 303.788, 4.86349, 14.3303
-WaterQv, LAI, Pres, T_Daily = 0.0190635, 0.19552,99089.4, 303.695
-PPFD_Daily = 14.3303
+Sinbeta, TairK0, Ws0, PPFD  = 0.0510852, 302.126,3.72804, 60.6828
+WaterQv, LAI, Pres, T_Daily = 0.0230536, 0.184263,99119, 302.275
+PPFD_Daily = 60.6828
 JDATE = 142
-I = 1
-J = 1
+I = 10
+J = 14
 
 CTF = CTS[:,J-1,I-1]
 print(np.shape(CTF))
@@ -183,7 +183,7 @@ if (TotalCT > 0 and LAI >0):
             elif (MaxSolar < Solar):
                 Transmis = 1.0
             else:
-                Transmist = Solar/MaxSolar
+                Transmis = Solar/MaxSolar
             ## PPFDdiffFrac Determine
             FracDiff = 0.156+0.86/(1+np.exp(11.1*(Transmis-0.53)))
             PPFDfrac = 0.55-Transmis*0.12
@@ -309,8 +309,7 @@ if (TotalCT > 0 and LAI >0):
                 IRin = SunleafIR[LL]
 
                 E1 = (Q+IRin-IRoutairT-LHairT)
-                print("\n")
-                print("LL:" + str(LL))
+
                 E1 = -1 if E1==0 else E1
                 Tdelt = 1.
                 Balance = 10.
@@ -377,21 +376,46 @@ if (TotalCT > 0 and LAI >0):
                 IRout = LeafIR(Tleaf,Eps)
                 ShadeleafIR[LL] = ShadeleafIR[LL]-IRout
             for LL in range(Layer):
-                    Ea1tLayer[LL] = 0.
-                    Ea1tLayer[LL] = GAMTLD(SunleafTk[LL],T_Daily)*Sunfrac[LL]+GAMTLD(ShadeleafTk[LL], T_Daily)*(1-Sunfrac[LL])
+                Ea1tLayer[LL] = 0.
+                Ea1tLayer[LL] = GAMTLD(SunleafTk[LL],T_Daily)*Sunfrac[LL]+GAMTLD(ShadeleafTk[LL], T_Daily)*(1-Sunfrac[LL])
 
-                    Ea1pLayer[LL] = 0.
-                    Ea1pLayer[LL] = GAMP21(SunPPFD[LL], PPFD_Daily*0.5,200)*Sunfrac[LL]+GAMP21(ShadePPFD[LL], PPFD_Daily*0.16,50)* (1-Sunfrac[LL])
+                Ea1pLayer[LL] = 0.
+                Ea1pLayer[LL] = GAMP21(SunPPFD[LL], PPFD_Daily*0.5,200)*Sunfrac[LL]+GAMP21(ShadePPFD[LL], PPFD_Daily*0.16,50)* (1-Sunfrac[LL])
 
-                    Ea1Layer[LL] = 0.
-                    Ea1Layer[LL] = GAMTLD(SunleafTk[LL],T_Daily) * GAMP21(SunPPFD[LL], PPFD_Daily*0.5,200)*Sunfrac[LL]
-                    Ea1Layer[LL] = Ea1Layer[LL]+ GAMTLD(ShadeleafTk[LL], T_Daily) * GAMP21(ShadePPFD[LL], PPFD_Daily*0.16,50)* (1-Sunfrac[LL])
+                Ea1Layer[LL] = 0.
+                Ea1Layer[LL] = GAMTLD(SunleafTk[LL],T_Daily) * GAMP21(SunPPFD[LL], PPFD_Daily*0.5,200)*Sunfrac[LL]
+                Ea1Layer[LL] = Ea1Layer[LL]+ GAMTLD(ShadeleafTk[LL], T_Daily) * GAMP21(ShadePPFD[LL], PPFD_Daily*0.16,50)* (1-Sunfrac[LL])
 
-                    EatiLayer[LL] = 0.
-                    EatiLayer[LL] = Ealti99(SunleafTk[LL])*Sunfrac[LL]+Ealti99(ShadeleafTk[LL])*(1-Sunfrac[LL])
-
-
-            exit(1)
+                EatiLayer[LL] = 0.
+                EatiLayer[LL] = Ealti99(SunleafTk[LL])*Sunfrac[LL]+Ealti99(ShadeleafTk[LL])*(1-Sunfrac[LL])
+            Ea1Canopy = 0.    
+            Ea1tCanopy = 0.
+            Ea1pCanopy = 0.
+            EatiCanopy = 0.
+            for LL in range(Layer):
+                Ea1pCanopy = Ea1pCanopy+Ea1pLayer[LL]* VPslwWT[LL] * VPgausWt[LL]
+                Ea1tCanopy = Ea1tCanopy+ Ea1tLayer[LL]* VPslwWT[LL] * VPgausWt[LL]
+                Ea1Canopy = Ea1Canopy + Ea1Layer[LL] * VPslwWT[LL] * VPgausWt[LL]
+                EatiCanopy = EatiCanopy+ EatiLayer[LL]* VPslwWT[LL] * VPgausWt[LL]
+                #print("\n")
+                #print("LL:" + str(LL))
+                #print("Ea1pCanopy:" + str(Ea1pCanopy))
+                #print("Ea1tCanopy:" + str(Ea1tCanopy))
+                #print("Ea1Canopy:" + str(Ea1Canopy))
+                #print("EatiCanopy:" + str(EatiCanopy))
+            Ea1Canopy *= 0.56
+            Ea1Canopy *= LAI
+            ADJUST_FACTOR_LD += 0.01 * CTF[I_CT]* Ea1Canopy
+            ADJUST_FACTOR_LI += 0.01 * CTF[I_CT]* EatiCanopy
+            print("I_CT####:" + str(I_CT))
+            print("Ea1Canopy:" + str(Ea1Canopy))
+            print("ADJUST_FACTOR_LD: " + str(ADJUST_FACTOR_LD))
+            print("ADJUST_FACTOR_LI: " + str(ADJUST_FACTOR_LI))
+    FACTOR_LD = ADJUST_FACTOR_LD /TotalCT
+    FACTOR_LI = ADJUST_FACTOR_LI/TotalCT;
+    print("FLD" + str(FACTOR_LD))
+    print("FLI" + str(FACTOR_LI))
+    exit(1)        
 elif (TotalCT <0):
     print("Total CT can't be negative")
     exit(1)
