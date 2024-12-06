@@ -1,5 +1,6 @@
 import h5py
 import numpy as np
+#import time
 def setCanopychar(Nrcha,NrTYP) -> np.ndarray:
     Canopychar = np.zeros((Nrcha,NrTYP))
     Canopychar[0,:],Canopychar[2,:], Canopychar[3,:] = 16, 0.1,24
@@ -118,16 +119,15 @@ def Ealti99(temp:float) -> float:
 with h5py.File('./CANTYPE_MODISonly_2013.h5', 'r') as file:
     # List all groups/datasets in the file
     CTS = file['CTS'][:]
-print(np.shape(CTS)) 
-Sinbeta, TairK0, Ws0, PPFD  = 0.0510852, 302.126,3.72804, 60.6828
-WaterQv, LAI, Pres, T_Daily = 0.0230536, 0.184263,99119, 302.275
-PPFD_Daily = 60.6828
+Sinbeta, TairK0, Ws0, PPFD  = 0.527669, 298.264, 4.0673, 303.025
+WaterQv, LAI, Pres, T_Daily = 0.0193194, 0.0622661,99423.1, 298.881
+PPFD_Daily = 303.025
 JDATE = 142
-I = 10
-J = 14
-
+I = 103
+J = 10
+#start_time = time.time()
 CTF = CTS[:,J-1,I-1]
-print(np.shape(CTF))
+#print(np.shape(CTF))
 Layer = 5
 StomataDI, Nrcha, NrTYP = 1, 17, 6
 TotalCT, ADJUST_FACTOR_LD, ADJUST_FACTOR_LI = 0., 0., 0.
@@ -397,25 +397,18 @@ if (TotalCT > 0 and LAI >0):
                 Ea1tCanopy = Ea1tCanopy+ Ea1tLayer[LL]* VPslwWT[LL] * VPgausWt[LL]
                 Ea1Canopy = Ea1Canopy + Ea1Layer[LL] * VPslwWT[LL] * VPgausWt[LL]
                 EatiCanopy = EatiCanopy+ EatiLayer[LL]* VPslwWT[LL] * VPgausWt[LL]
-                #print("\n")
-                #print("LL:" + str(LL))
-                #print("Ea1pCanopy:" + str(Ea1pCanopy))
-                #print("Ea1tCanopy:" + str(Ea1tCanopy))
-                #print("Ea1Canopy:" + str(Ea1Canopy))
-                #print("EatiCanopy:" + str(EatiCanopy))
             Ea1Canopy *= 0.56
             Ea1Canopy *= LAI
             ADJUST_FACTOR_LD += 0.01 * CTF[I_CT]* Ea1Canopy
             ADJUST_FACTOR_LI += 0.01 * CTF[I_CT]* EatiCanopy
-            print("I_CT####:" + str(I_CT))
-            print("Ea1Canopy:" + str(Ea1Canopy))
-            print("ADJUST_FACTOR_LD: " + str(ADJUST_FACTOR_LD))
-            print("ADJUST_FACTOR_LI: " + str(ADJUST_FACTOR_LI))
+            
     FACTOR_LD = ADJUST_FACTOR_LD /TotalCT
     FACTOR_LI = ADJUST_FACTOR_LI/TotalCT;
+    #end_time = time.time()
+    #elapsed_time = end_time - start_time
+    #print("Elapsed time:", elapsed_time)
     print("FLD" + str(FACTOR_LD))
-    print("FLI" + str(FACTOR_LI))
-    exit(1)        
+    print("FLI" + str(FACTOR_LI))       
 elif (TotalCT <0):
     print("Total CT can't be negative")
     exit(1)
